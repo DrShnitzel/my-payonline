@@ -9,7 +9,7 @@ This is a thin wrapper library that makes using PayOnline API a bit easier.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'payonline'
+gem 'payonline', github: 'DrShnitzel/payonline'
 ```
 
 And then execute:
