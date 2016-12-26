@@ -1,7 +1,11 @@
 module Payonline
   class Signature
-    def initialize(params, keys, add_merchant_id = true)
+    def initialize(params, keys, add_merchant_id = true, use_hack = false)
       @keys = keys
+
+      # HACK: PayOnline sends both TransactionId and TransactionID (notice the letter case)
+      # hack is needed when TransactionID is send
+      @use_hack = use_hack
 
       # The order of parameter keys matters
       @params = prepare_params(params, add_merchant_id)
@@ -37,12 +41,16 @@ module Payonline
       digest_params = @params.slice(*@keys) if @keys.present?
       digest_params[:private_security_key] = Payonline.configuration.private_security_key
 
-      # HACK: PayOnline sends OrderId but TransactionID (notice the letter case)
-      digest_params
-        .transform_keys { |key| key.to_s.camelize }
-        .transform_keys { |key| key == 'TransactionId' ? 'TransactionID' : key }
-        .map { |key, value| "#{key}=#{value}" }
-        .join('&')
+      digest_params = digest_params.transform_keys { |key| key.to_s.camelize }
+      digest_params = fix_transaction_id(digest_params) if @use_hack
+
+      digest_params.map { |key, value| "#{key}=#{value}" }.join('&')
+    end
+
+    def fix_transaction_id(params)
+      params.transform_keys do |key|
+        key == 'TransactionId' ? 'TransactionID' : key
+      end
     end
   end
 end
